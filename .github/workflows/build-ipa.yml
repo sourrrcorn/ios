@@ -1,0 +1,16 @@
+name: Build IPA
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+jobs:
+  build:
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build unsigned IPA
+        run: bash build_ipa.sh
+      - uses: actions/upload-artifact@v4
+        with:
+          name: CLMRS-ipa
+          path: build/CLMRS.ipa
