@@ -9,7 +9,23 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build unsigned IPA
-        run: bash build_ipa.sh
+        run: |
+          set -euo pipefail
+          SRC="$(find . -name CLMRS.swift | head -n 1)"
+          PLIST="$(find . -name Info.plist | head -n 1)"
+          if [ -z "$SRC" ] || [ -z "$PLIST" ]; then
+            echo "Missing CLMRS.swift or Info.plist. Files in the repo:"
+            find . -type f -not -path './.git/*' | sort
+            exit 1
+          fi
+          APP="build/Payload/CLMRS.app"
+          mkdir -p "$APP"
+          SDK="$(xcrun --sdk iphoneos --show-sdk-path)"
+          xcrun --sdk iphoneos swiftc -parse-as-library -O -target arm64-apple-ios15.0 -sdk "$SDK" "$SRC" -o "$APP/CLMRS"
+          cp "$PLIST" "$APP/Info.plist"
+          find . -name 'AppIcon*.png' -not -path './build/*' -exec cp {} "$APP/" \;
+          printf 'APPL????' > "$APP/PkgInfo"
+          (cd build && zip -qry CLMRS.ipa Payload)
       - uses: actions/upload-artifact@v4
         with:
           name: CLMRS-ipa
